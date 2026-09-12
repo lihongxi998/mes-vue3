@@ -3,7 +3,7 @@
     <el-row :gutter="20">
       <el-col :span="6">
         <el-card shadow="hover" class="stat-card">
-          <el-statistic title="待处理订单" :value="stats.pendingOrders">
+          <el-statistic title="待处理订单" :value="stats.pendingOrders" :loading="statsLoading">
             <template #prefix>
               <el-icon color="#409eff"><Document /></el-icon>
             </template>
@@ -12,7 +12,7 @@
       </el-col>
       <el-col :span="6">
         <el-card shadow="hover" class="stat-card">
-          <el-statistic title="今日排程" :value="stats.todaySchedules" />
+          <el-statistic title="今日排程" :value="stats.todaySchedules" :loading="statsLoading" />
         </el-card>
       </el-col>
       <el-col :span="6">
@@ -94,9 +94,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { Document, Calendar, Check, Box, Setting } from '@element-plus/icons-vue'
 import { listWorkorder, listQcPending, listMachinery } from '@/api/mes'
+
+const statsLoading = ref(false)
+const todosLoading = ref(false)
 
 const stats = reactive({
   pendingOrders: 0,
@@ -105,7 +108,6 @@ const stats = reactive({
   equipmentRate: 95.2
 })
 
-const todosLoading = ref(false)
 const todoList = ref<any[]>([])
 const announcements = ref([
   { id: 1, date: '2024-09-12', content: '系统升级完成，新增设备管理模块' },
@@ -113,7 +115,11 @@ const announcements = ref([
   { id: 3, date: '2024-09-08', content: '质量管理模块上线' }
 ])
 
+let statsTimer: ReturnType<typeof setTimeout> | null = null
+let todoTimer: ReturnType<typeof setTimeout> | null = null
+
 const loadStats = async () => {
+  statsLoading.value = true
   try {
     const [orderRes, qcRes, machineryRes] = await Promise.all([
       listWorkorder({ status: 'producing' }),
@@ -127,6 +133,8 @@ const loadStats = async () => {
     stats.equipmentRate = machineryRes?.list ? (machineryRes.list.length / (machineryRes.total || 1) * 100) : 95.2
   } catch (error) {
     console.error('加载统计数据失败:', error)
+  } finally {
+    statsLoading.value = false
   }
 }
 
@@ -134,7 +142,7 @@ const loadTodos = async () => {
   todosLoading.value = true
   try {
     const res: any = await listWorkorder({ status: 'pending' })
-    todoList.value = (res?.list || []).map((o: any) => ({
+    todoList.value = (res?.list || []).slice(0, 5).map((o: any) => ({
       id: o.id,
       type: 'urgent',
       content: `订单 ${o.no} 待排产`
@@ -146,9 +154,26 @@ const loadTodos = async () => {
   }
 }
 
-onMounted(() => {
+const startPolling = () => {
   loadStats()
   loadTodos()
+  
+  statsTimer = setInterval(() => {
+    loadStats()
+  }, 30000)
+  
+  todoTimer = setInterval(() => {
+    loadTodos()
+  }, 60000)
+}
+
+onMounted(() => {
+  startPolling()
+})
+
+onUnmounted(() => {
+  if (statsTimer) clearInterval(statsTimer)
+  if (todoTimer) clearInterval(todoTimer)
 })
 </script>
 

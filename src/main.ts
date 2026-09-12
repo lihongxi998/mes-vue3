@@ -18,3 +18,12 @@ app.use(router)
 app.use(ElementPlus)
 
 app.mount('#app')
+
+// 全局错误处理
+window.addEventListener('error', (event) => {
+  console.error('[Global Error]', event.error)
+})
+
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('[Unhandled Rejection]', event.reason)
+})
