@@ -36,6 +36,14 @@
           <el-icon><Setting /></el-icon>
           <template #title>设备管理</template>
         </el-menu-item>
+        <el-menu-item index="/maintenance">
+          <el-icon><Tools /></el-icon>
+          <template #title>设备维护</template>
+        </el-menu-item>
+        <el-menu-item index="/feedback">
+          <el-icon><Edit /></el-icon>
+          <template #title>生产报工</template>
+        </el-menu-item>
       </el-menu>
     </el-aside>
     
@@ -78,7 +86,7 @@
 import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { 
-  HomeFilled, Document, Calendar, Check, Box, Setting,
+  HomeFilled, Document, Calendar, Check, Box, Setting, Tools, Edit,
   Fold, Expand, User
 } from '@element-plus/icons-vue'
 
