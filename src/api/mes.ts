@@ -219,3 +219,37 @@ export interface Team {
 export const listTeam = (params?: any) => {
   return request.post({ url: '/mes/cal/team/list', data: params })
 }
+
+// 库存相关（复用 WMS 接口）
+export interface StockInfo {
+  id: number
+  matId: number
+  matCode: string
+  matName: string
+  spec: string
+  unit: string
+  warehouseId: number
+  warehouseName: string
+  locationId: number
+  locationCode: string
+  quantity: number
+  minQuantity: number
+  maxQuantity: number
+}
+
+export interface Warehouse {
+  id: number
+  code: string
+  name: string
+  address: string
+  phone: string
+  status: string
+}
+
+export const listStockInfo = (params?: any) => {
+  return request.post({ url: '/stock/info/list', data: params })
+}
+
+export const listAllWarehouse = (params?: any) => {
+  return request.get({ url: '/base/warehouse/listAll', params })
+}
