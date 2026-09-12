@@ -1,8 +1,8 @@
 <template>
-  <div class="equipment-page">
+  <div class="maintenance-page">
     <el-card>
       <template #header>
-        <span>设备管理</span>
+        <span>设备维护</span>
       </template>
       <el-empty description="功能开发中..." />
     </el-card>
@@ -13,7 +13,7 @@
 </script>
 
 <style scoped>
-.equipment-page {
+.maintenance-page {
   padding: 20px;
 }
 </style>

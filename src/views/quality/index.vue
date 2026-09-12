@@ -1,10 +1,10 @@
 <template>
-  <div class="page">
+  <div class="quality-page">
     <el-card>
       <template #header>
         <span>质量管理</span>
       </template>
-      <p>功能开发中...</p>
+      <el-empty description="功能开发中..." />
     </el-card>
   </div>
 </template>
@@ -13,7 +13,7 @@
 </script>
 
 <style scoped>
-.page {
+.quality-page {
   padding: 20px;
 }
 </style>

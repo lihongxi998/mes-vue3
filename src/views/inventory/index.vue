@@ -1,8 +1,8 @@
 <template>
-  <div class="equipment-page">
+  <div class="inventory-page">
     <el-card>
       <template #header>
-        <span>设备管理</span>
+        <span>物料库存</span>
       </template>
       <el-empty description="功能开发中..." />
     </el-card>
@@ -13,7 +13,7 @@
 </script>
 
 <style scoped>
-.equipment-page {
+.inventory-page {
   padding: 20px;
 }
 </style>

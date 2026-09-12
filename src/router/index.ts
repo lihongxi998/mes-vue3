@@ -12,7 +12,13 @@ const routes: RouteRecordRaw[] = [
     path: '/production',
     name: 'Production',
     component: () => import('@/views/production/index.vue'),
-    meta: { title: '生产管理' }
+    meta: { title: '生产订单' }
+  },
+  {
+    path: '/scheduling',
+    name: 'Scheduling',
+    component: () => import('@/views/scheduling/index.vue'),
+    meta: { title: '生产排程' }
   },
   {
     path: '/quality',
@@ -21,16 +27,22 @@ const routes: RouteRecordRaw[] = [
     meta: { title: '质量管理' }
   },
   {
+    path: '/inventory',
+    name: 'Inventory',
+    component: () => import('@/views/inventory/index.vue'),
+    meta: { title: '物料库存' }
+  },
+  {
     path: '/equipment',
     name: 'Equipment',
     component: () => import('@/views/equipment/index.vue'),
     meta: { title: '设备管理' }
   },
   {
-    path: '/material',
-    name: 'Material',
-    component: () => import('@/views/material/index.vue'),
-    meta: { title: '物料管理' }
+    path: '/maintenance',
+    name: 'Maintenance',
+    component: () => import('@/views/maintenance/index.vue'),
+    meta: { title: '设备维护' }
   }
 ]
 
