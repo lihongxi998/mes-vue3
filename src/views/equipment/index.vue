@@ -8,7 +8,6 @@
         </div>
       </template>
       
-      <!-- 筛选条件 -->
       <el-form :inline="true" :model="queryParams" class="filter-form">
         <el-form-item label="设备名称">
           <el-input v-model="queryParams.name" placeholder="请输入设备名称" clearable />
@@ -27,18 +26,17 @@
         </el-form-item>
       </el-form>
       
-      <!-- 设备列表 -->
-      <el-table :data="equipment" style="width: 100%" stripe>
+      <el-table :data="equipment" v-loading="loading" style="width: 100%" stripe>
         <el-table-column prop="code" label="设备编号" width="150" />
         <el-table-column prop="name" label="设备名称" width="180" />
         <el-table-column prop="model" label="型号" width="120" />
-        <el-table-column prop="location" label="位置" width="120" />
+        <el-table-column prop="workshopName" label="所属车间" width="120" />
         <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
             <el-tag :type="getStatusType(row.status)">{{ getStatusText(row.status) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="lastMaintenance" label="上次维护" width="120" />
+        <el-table-column prop="lastMaintenanceDate" label="上次维护" width="120" />
         <el-table-column label="操作" width="180">
           <template #default="{ row }">
             <el-button size="small" @click="handleEdit(row)">编辑</el-button>
@@ -48,7 +46,6 @@
         </el-table-column>
       </el-table>
       
-      <!-- 分页 -->
       <el-pagination
         v-model:current-page="pagination.page"
         v-model:page-size="pagination.pageSize"
@@ -60,42 +57,15 @@
         class="pagination"
       />
     </el-card>
-    
-    <!-- 添加/编辑对话框 -->
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="600px">
-      <el-form :model="form" label-width="100px">
-        <el-form-item label="设备编号">
-          <el-input v-model="form.code" placeholder="请输入设备编号" />
-        </el-form-item>
-        <el-form-item label="设备名称">
-          <el-input v-model="form.name" placeholder="请输入设备名称" />
-        </el-form-item>
-        <el-form-item label="型号">
-          <el-input v-model="form.model" placeholder="请输入型号" />
-        </el-form-item>
-        <el-form-item label="位置">
-          <el-input v-model="form.location" placeholder="请输入位置" />
-        </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="form.status" placeholder="请选择状态" style="width: 100%">
-            <el-option label="运行中" value="running" />
-            <el-option label="空闲" value="idle" />
-            <el-option label="维护中" value="maintenance" />
-            <el-option label="故障" value="fault" />
-          </el-select>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit">确定</el-button>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { listMachinery } from '@/api/mes'
+
+const loading = ref(false)
 
 const queryParams = reactive({
   name: '',
@@ -108,23 +78,7 @@ const pagination = reactive({
   total: 0
 })
 
-const equipment = ref([
-  { id: 1, code: 'CNC-001', name: '数控加工中心', model: 'VMC-850', location: '车间A-01', status: 'running', lastMaintenance: '2024-09-01' },
-  { id: 2, code: 'CNC-002', name: '数控车床', model: 'CK-6140', location: '车间A-02', status: 'idle', lastMaintenance: '2024-08-28' },
-  { id: 3, code: 'LATH-001', name: '普通车床', model: 'CA6140', location: '车间B-01', status: 'maintenance', lastMaintenance: '2024-09-10' },
-  { id: 4, code: 'MILL-001', name: '铣床', model: 'X62W', location: '车间B-02', status: 'fault', lastMaintenance: '2024-09-05' },
-])
-
-const dialogVisible = ref(false)
-const dialogTitle = ref('添加设备')
-const form = reactive({
-  id: null as number | null,
-  code: '',
-  name: '',
-  model: '',
-  location: '',
-  status: 'idle'
-})
+const equipment = ref<any[]>([])
 
 const getStatusType = (status: string) => {
   const types: Record<string, any> = {
@@ -146,26 +100,37 @@ const getStatusText = (status: string) => {
   return texts[status] || status
 }
 
-const loadData = () => {
-  console.log('加载设备列表', queryParams)
+const loadData = async () => {
+  loading.value = true
+  try {
+    const params = {
+      ...queryParams,
+      page: pagination.page,
+      pageSize: pagination.pageSize
+    }
+    const res: any = await listMachinery(params)
+    equipment.value = res?.list || []
+    pagination.total = res?.total || 0
+  } catch (error: any) {
+    console.error('加载设备列表失败:', error)
+    ElMessage.error(error.message || '加载失败')
+  } finally {
+    loading.value = false
+  }
 }
 
 const resetQuery = () => {
-  queryParams.name = ''
-  queryParams.status = ''
+  Object.assign(queryParams, { name: '', status: '' })
+  pagination.page = 1
   loadData()
 }
 
 const handleCreate = () => {
-  dialogTitle.value = '添加设备'
-  Object.assign(form, { id: null, code: '', name: '', model: '', location: '', status: 'idle' })
-  dialogVisible.value = true
+  ElMessage.info('添加设备功能开发中...')
 }
 
 const handleEdit = (row: any) => {
-  dialogTitle.value = '编辑设备'
-  Object.assign(form, row)
-  dialogVisible.value = true
+  ElMessage.info('编辑设备功能开发中...')
 }
 
 const handleMaintenance = (row: any) => {
@@ -181,32 +146,14 @@ const handleDelete = (row: any) => {
     .catch(() => {})
 }
 
-const handleSubmit = () => {
-  ElMessage.success(dialogTitle.value === '添加设备' ? '添加成功' : '保存成功')
-  dialogVisible.value = false
-}
-
 onMounted(() => {
   loadData()
 })
 </script>
 
 <style scoped>
-.equipment-page {
-  padding: 20px;
-}
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-weight: bold;
-}
-.filter-form {
-  margin-bottom: 20px;
-}
-.pagination {
-  margin-top: 20px;
-  display: flex;
-  justify-content: flex-end;
-}
+.equipment-page { padding: 0; }
+.card-header { display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
+.filter-form { margin-bottom: 20px; }
+.pagination { margin-top: 20px; display: flex; justify-content: flex-end; }
 </style>

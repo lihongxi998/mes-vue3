@@ -8,13 +8,12 @@
         </div>
       </template>
       
-      <!-- 筛选条件 -->
       <el-form :inline="true" :model="queryParams" class="filter-form">
         <el-form-item label="设备编号">
-          <el-input v-model="queryParams.equipmentCode" placeholder="请输入设备编号" clearable />
+          <el-input v-model="queryParams.machineryCode" placeholder="请输入设备编号" clearable />
         </el-form-item>
         <el-form-item label="维护类型">
-          <el-select v-model="queryParams.type" placeholder="请选择" clearable style="width: 120px">
+          <el-select v-model="queryParams.repairType" placeholder="请选择" clearable style="width: 120px">
             <el-option label="定期维护" value="regular" />
             <el-option label="故障维修" value="repair" />
             <el-option label="保养" value="maintenance" />
@@ -26,19 +25,25 @@
         </el-form-item>
       </el-form>
       
-      <!-- 维护记录列表 -->
-      <el-table :data="records" style="width: 100%" stripe>
-        <el-table-column prop="recordNo" label="记录编号" width="150" />
-        <el-table-column prop="equipmentCode" label="设备编号" width="150" />
-        <el-table-column prop="equipmentName" label="设备名称" width="150" />
-        <el-table-column prop="type" label="维护类型" width="100">
+      <el-table :data="records" v-loading="loading" style="width: 100%" stripe>
+        <el-table-column prop="no" label="记录编号" width="150" />
+        <el-table-column prop="machineryCode" label="设备编号" width="150" />
+        <el-table-column prop="machineryName" label="设备名称" width="150" />
+        <el-table-column prop="repairType" label="维护类型" width="100">
           <template #default="{ row }">
-            <el-tag>{{ getTypeText(row.type) }}</el-tag>
+            <el-tag>{{ getRepairTypeText(row.repairType) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="content" label="维护内容" />
-        <el-table-column prop="maintainer" label="维护人员" width="100" />
-        <el-table-column prop="date" label="维护日期" width="120" />
+        <el-table-column prop="faultDescription" label="故障描述" />
+        <el-table-column prop="repairPerson" label="维护人员" width="100" />
+        <el-table-column prop="repairTime" label="维护日期" width="120" />
+        <el-table-column prop="status" label="状态" width="100">
+          <template #default="{ row }">
+            <el-tag :type="row.status === 'completed' ? 'success' : 'warning'">
+              {{ row.status === 'completed' ? '已完成' : '进行中' }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="120">
           <template #default="{ row }">
             <el-button size="small" @click="handleView(row)">查看</el-button>
@@ -46,7 +51,6 @@
         </el-table-column>
       </el-table>
       
-      <!-- 分页 -->
       <el-pagination
         v-model:current-page="pagination.page"
         v-model:page-size="pagination.pageSize"
@@ -64,10 +68,13 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { listRepair } from '@/api/mes'
+
+const loading = ref(false)
 
 const queryParams = reactive({
-  equipmentCode: '',
-  type: ''
+  machineryCode: '',
+  repairType: ''
 })
 
 const pagination = reactive({
@@ -76,23 +83,9 @@ const pagination = reactive({
   total: 0
 })
 
-const records = ref([
-  { id: 1, recordNo: 'MT-2024-001', equipmentCode: 'CNC-001', equipmentName: '数控加工中心', type: 'regular', content: '更换润滑油，检查刀具磨损', maintainer: '维修工A', date: '2024-09-10' },
-  { id: 2, recordNo: 'MT-2024-002', equipmentCode: 'CNC-002', equipmentName: '数控车床', type: 'repair', content: '主轴轴承更换', maintainer: '维修工B', date: '2024-09-08' },
-  { id: 3, recordNo: 'MT-2024-003', equipmentCode: 'LATH-001', equipmentName: '普通车床', type: 'maintenance', content: '日常保养，清洁设备', maintainer: '维修工A', date: '2024-09-05' },
-])
+const records = ref<any[]>([])
 
-const loadData = () => {
-  console.log('加载维护记录', queryParams)
-}
-
-const resetQuery = () => {
-  queryParams.equipmentCode = ''
-  queryParams.type = ''
-  loadData()
-}
-
-const getTypeText = (type: string) => {
+const getRepairTypeText = (type: string) => {
   const texts: Record<string, string> = {
     'regular': '定期维护',
     'repair': '故障维修',
@@ -101,12 +94,37 @@ const getTypeText = (type: string) => {
   return texts[type] || type
 }
 
+const loadData = async () => {
+  loading.value = true
+  try {
+    const params = {
+      ...queryParams,
+      page: pagination.page,
+      pageSize: pagination.pageSize
+    }
+    const res: any = await listRepair(params)
+    records.value = res?.list || []
+    pagination.total = res?.total || 0
+  } catch (error: any) {
+    console.error('加载维护记录失败:', error)
+    ElMessage.error(error.message || '加载失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+const resetQuery = () => {
+  Object.assign(queryParams, { machineryCode: '', repairType: '' })
+  pagination.page = 1
+  loadData()
+}
+
 const handleCreate = () => {
   ElMessage.info('新增维护记录功能开发中...')
 }
 
 const handleView = (row: any) => {
-  ElMessage.info(`查看维护详情: ${row.recordNo}`)
+  ElMessage.info(`查看维护详情: ${row.no}`)
 }
 
 onMounted(() => {
@@ -115,21 +133,8 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.maintenance-page {
-  padding: 0;
-}
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-weight: bold;
-}
-.filter-form {
-  margin-bottom: 20px;
-}
-.pagination {
-  margin-top: 20px;
-  display: flex;
-  justify-content: flex-end;
-}
+.maintenance-page { padding: 0; }
+.card-header { display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
+.filter-form { margin-bottom: 20px; }
+.pagination { margin-top: 20px; display: flex; justify-content: flex-end; }
 </style>
